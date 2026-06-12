@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0c1612">
+<title>Drogan — Session Tracker</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎲</text></svg>">
+<style>
+  :root{
+    --bg:#0c1612; --card:#13211a; --card2:#0f1b15; --line:#24402f;
+    --text:#dbe8df; --mut:#92ab9c; --teal:#52d6a8; --cold:#7cc4e8;
+    --amber:#e8c468; --red:#e88a8a;
+  }
+  *{box-sizing:border-box;touch-action:manipulation}
+  body{margin:0;background:var(--bg);color:var(--text);
+       font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+       -webkit-text-size-adjust:100%}
+  main{max-width:520px;margin:0 auto;padding:12px 12px 80px}
+  h2{font-family:Georgia,serif;font-size:1.15rem;color:var(--teal);margin:0 0 10px;
+     display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  button{font:inherit;color:inherit;background:var(--card2);border:1px solid var(--line);
+         border-radius:10px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+  button:active{transform:scale(.96)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin:12px 0}
+  .hint{font-size:.82rem;color:var(--mut);margin:8px 0 0}
+  .hint2{font-size:.78rem;color:var(--mut);font-weight:400;display:block}
+  /* sticky top bar */
+  .top{position:sticky;top:0;z-index:10;display:flex;justify-content:space-between;align-items:center;
+       gap:10px;padding:10px 14px;background:rgba(12,22,18,.92);backdrop-filter:blur(6px);
+       border-bottom:1px solid var(--line)}
+  .top .who{font-family:Georgia,serif;font-size:1.15rem;color:var(--teal);font-weight:700}
+  .top .who span{display:block;font:400 .72rem system-ui;color:var(--mut)}
+  .top .mini{font-size:1rem;color:var(--mut);white-space:nowrap}
+  .top .mini b{color:#fff;font-size:1.15rem}
+  /* links row */
+  .rowlinks{display:flex;gap:10px;margin:12px 0}
+  .rowlinks a,.rowlinks button{flex:1;text-align:center;display:block;padding:12px;border-radius:12px;
+       text-decoration:none;color:var(--text);background:var(--card);border:1px solid var(--line);font-weight:600}
+  /* static chips */
+  .chips{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .chip{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px 4px;text-align:center}
+  .chip b{display:block;font-size:1.15rem;color:var(--teal)}
+  .chip span{font-size:.68rem;color:var(--mut);text-transform:uppercase;letter-spacing:.03em}
+  /* HP */
+  .hprow{display:flex;align-items:center;justify-content:center;gap:8px}
+  .adj{min-width:52px;min-height:54px;font-size:1.15rem;font-weight:700}
+  .bigHp{flex:1;text-align:center;font-weight:800;font-size:2.5rem;line-height:1;color:#fff;cursor:pointer}
+  .bigHp small{font-size:1.1rem;color:var(--mut);font-weight:600}
+  .bigHp .emo{font-size:1.6rem;vertical-align:middle}
+  .bigHp.zero{color:var(--red)}
+  .hpsub{text-align:center;font-size:.85rem;color:var(--mut);margin-top:6px}
+  .temprow{display:flex;align-items:center;gap:10px;margin-top:12px;flex-wrap:wrap}
+  .temprow .lbl{font-size:.9rem;color:var(--mut)}
+  .temprow button{min-width:46px;min-height:44px;font-size:1.2rem}
+  .temprow b{min-width:28px;text-align:center;font-size:1.2rem}
+  .tunic{margin-left:auto;padding:0 14px;color:var(--teal);font-weight:600}
+  details{border-top:1px dashed var(--line);margin-top:12px;padding-top:4px}
+  summary{cursor:pointer;padding:8px 0;color:var(--cold);font-weight:600;list-style-position:inside}
+  .deathrow{display:flex;align-items:center;gap:10px;margin:6px 0;font-size:.9rem}
+  .deathrow span{display:flex;gap:8px}
+  .mini-btn{padding:4px 10px;font-size:.8rem;color:var(--mut)}
+  /* pips */
+  .pip{width:38px;height:38px;min-height:0;border-radius:50%;border:2px solid #3a5a48;background:transparent;padding:0}
+  .pip.on{background:var(--teal);border-color:var(--teal)}
+  .pip.red.on{background:var(--red);border-color:var(--red)}
+  .piprow{display:flex;gap:8px;flex-wrap:wrap}
+  /* wild shape */
+  .forms{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .formbtn{padding:10px;text-align:left;min-height:64px}
+  .formbtn b{display:block;font-size:.98rem;color:#fff}
+  .formbtn span{font-size:.75rem;color:var(--mut)}
+  .formbtn.active{border-color:var(--teal);background:#16352a;box-shadow:0 0 0 1px var(--teal)}
+  .formcard{background:#11241c;border:1px solid var(--line);border-left:4px solid var(--teal);
+            border-radius:10px;padding:12px;margin-top:10px}
+  .formcard h3{margin:0 0 2px;font-family:Georgia,serif;color:var(--teal)}
+  .formcard .statline{font-size:.88rem;color:var(--cold);margin-bottom:8px}
+  .formcard ul{margin:0;padding-left:1.1em;font-size:.9rem}
+  .formcard li{margin:4px 0}
+  .formcard li b{color:var(--amber)}
+  .revert{width:100%;margin-top:10px;min-height:48px;font-weight:700;color:var(--amber)}
+  /* resources */
+  .res{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 0;
+       border-bottom:1px dashed var(--line);flex-wrap:wrap}
+  .res:last-of-type{border-bottom:0}
+  .reslabel{font-weight:600}
+  .counter{display:flex;align-items:center;gap:10px}
+  .counter button{min-width:46px;min-height:44px;font-size:1.2rem}
+  .counter b{min-width:30px;text-align:center;font-size:1.25rem}
+  /* concentration */
+  select{width:100%;font-size:1rem;padding:12px;border-radius:10px;background:var(--card2);
+         color:var(--text);border:1px solid var(--line)}
+  .concbanner{margin-top:10px;background:#2b1c1c;border:1px solid #5a3030;border-radius:10px;
+              padding:10px 12px;font-size:.88rem}
+  .concbanner b{color:var(--red)}
+  /* reference */
+  .ref details{border:0;border-top:1px dashed var(--line);margin:0;padding:0}
+  .ref details:first-of-type{border-top:0}
+  .sp{padding:6px 0 10px;font-size:.9rem;border-bottom:1px dotted #1d3528}
+  .sp:last-child{border-bottom:0}
+  .sp b{color:#fff}
+  .sp .m{color:var(--mut);font-size:.8rem}
+  .tag{display:inline-block;font-size:.66rem;font-weight:700;padding:1px 7px;border-radius:99px;vertical-align:1px}
+  .t-c{background:#4d2626;color:var(--red)}
+  .t-r{background:#1c3a4d;color:var(--cold)}
+  .t-ba{background:#46391a;color:var(--amber)}
+  .abil{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;text-align:center;margin:8px 0}
+  .abil div{background:var(--card2);border:1px solid var(--line);border-radius:8px;padding:6px 2px}
+  .abil span{display:block;font-size:.66rem;color:var(--mut)}
+  .abil b{font-size:.9rem}
+  .abil i{display:block;font-size:.7rem;font-style:normal;color:var(--cold)}
+  textarea{width:100%;min-height:110px;font:16px/1.5 system-ui;background:var(--card2);color:var(--text);
+           border:1px solid var(--line);border-radius:10px;padding:10px;resize:vertical}
+  .danger{width:100%;margin-top:18px;padding:12px;color:var(--red);font-size:.85rem}
+  /* toast */
+  #notice{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);max-width:92vw;width:max-content;
+          background:#1d4434;color:#d8f5e8;border:1px solid var(--teal);border-radius:12px;
+          padding:11px 16px;font-size:.92rem;z-index:50;box-shadow:0 6px 24px rgba(0,0,0,.5);
+          opacity:0;pointer-events:none;transition:opacity .25s}
+  #notice.show{opacity:1}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="who">Drogan<span>Goliath Druid 6</span></div>
+  <div class="mini" id="mini"></div>
+</header>
+
+<main>
+  <div class="rowlinks">
+    <a href="drogan-guide.html">📖 Strategy guide</a>
+    <button id="btnLongRest">🌙 Long rest</button>
+  </div>
+
+  <section class="chips">
+    <div class="chip"><b>14</b><span>AC</span></div>
+    <div class="chip"><b>+2</b><span>Initiative</span></div>
+    <div class="chip"><b>30 ft</b><span>Speed</span></div>
+    <div class="chip"><b>17</b><span>Spell DC</span></div>
+    <div class="chip"><b>+9</b><span>Spell attack</span></div>
+    <div class="chip"><b>+6</b><span>Staff hit</span></div>
+  </section>
+
+  <!-- HP -->
+  <section class="card">
+    <h2 id="hpTitle">Hit Points</h2>
+    <div class="hprow">
+      <button class="adj" data-d="-5">−5</button>
+      <button class="adj" data-d="-1">−1</button>
+      <div class="bigHp" id="bigHp" role="button" aria-label="Tap to set HP"></div>
+      <button class="adj" data-d="1">+1</button>
+      <button class="adj" data-d="5">+5</button>
+    </div>
+    <div class="hpsub" id="hpSub"></div>
+    <div class="temprow">
+      <span class="lbl">Temp HP</span>
+      <button id="tempMinus" aria-label="Temp HP minus">−</button>
+      <b id="tempVal">0</b>
+      <button id="tempPlus" aria-label="Temp HP plus">+</button>
+      <button class="tunic" id="btnTunic">🌿 Tunic +2</button>
+    </div>
+    <details id="deathBox">
+      <summary>Death saves</summary>
+      <div class="deathrow">Successes <span class="piprow" id="pipsDS"></span></div>
+      <div class="deathrow">Failures <span class="piprow" id="pipsDF"></span></div>
+      <p class="hint">At 0 HP roll a d20 at the start of each of your turns: 10+ = success. Three successes = stable; three failures = dead; natural 20 = back up with 1 HP. Any healing clears these. <button class="mini-btn" id="btnDeathReset">reset</button></p>
+    </details>
+  </section>
+
+  <!-- WILD SHAPE -->
+  <section class="card">
+    <h2>Wild Shape <span class="piprow" id="pipsWS"></span></h2>
+    <div class="forms" id="formBtns"></div>
+    <div class="formcard" id="formCard" hidden></div>
+    <p class="hint">Action to transform · bonus action to revert · no casting, talking or item use · concentration keeps running · Stone’s Endurance still works. When beast HP hits 0 you revert and leftover damage hits Drogan — the tracker does this for you.</p>
+  </section>
+
+  <!-- RESOURCES -->
+  <section class="card">
+    <h2>Resources</h2>
+    <div class="res">
+      <div class="reslabel">Stone’s Endurance<span class="hint2">reaction when damaged: reduce it by 1d12+4</span></div>
+      <span class="piprow" id="pipsSE"></span>
+    </div>
+    <div class="res">
+      <div class="reslabel">Goodberries<span class="hint2">action to eat/feed: +1 HP, wakes the dying</span></div>
+      <span class="counter"><button id="berryMinus" aria-label="Eat a goodberry">−</button><b id="berryVal"></b><button id="berryPlus" aria-label="Goodberry plus">+</button></span>
+    </div>
+    <div class="res"><div class="reslabel">Spell slots — Level 1</div><span class="piprow" id="pipsS1"></span></div>
+    <div class="res"><div class="reslabel">Spell slots — Level 2</div><span class="piprow" id="pipsS2"></span></div>
+    <div class="res"><div class="reslabel">Spell slots — Level 3</div><span class="piprow" id="pipsS3"></span></div>
+    <p class="hint">Tap a filled pip to spend it, an empty one to restore it.</p>
+  </section>
+
+  <!-- CONCENTRATION -->
+  <section class="card">
+    <h2>Concentration</h2>
+    <select id="concSel">
+      <option value="">— not concentrating —</option>
+      <option>Heat Metal (cold)</option>
+      <option>Aura of Vitality</option>
+      <option>Detect Magic</option>
+      <option>Beast Sense</option>
+      <option>Dancing Lights</option>
+    </select>
+    <div class="concbanner" id="concBanner" hidden></div>
+  </section>
+
+  <!-- REFERENCE -->
+  <section class="card ref">
+    <h2>Quick reference</h2>
+
+    <details>
+      <summary>Cantrips (free, at will)</summary>
+      <div class="sp"><b>Water Whip</b> <span class="m">action · 30 ft</span><br>+9 vs AC → <b>2d8 cold</b>.</div>
+      <div class="sp"><b>Primal Savagery</b> <span class="m">action · melee</span><br>+9 vs AC → <b>2d10 acid</b>. Your best in-your-face attack on two legs.</div>
+      <div class="sp"><b>Druidcraft</b> <span class="m">action · 30 ft</span><br>Predict weather 24 h · bloom a flower · tiny sensory effect · light/snuff a campfire.</div>
+      <div class="sp"><b>Light</b> <span class="m">necklace · action · touch · 1 h</span><br>Object shines 20 ft bright + 20 ft dim.</div>
+      <div class="sp"><b>Dancing Lights</b> <span class="t-c tag">C</span> <span class="m">necklace · action · 120 ft · 1 min</span><br>Up to 4 floating lights; move them 60 ft as a bonus action.</div>
+    </details>
+
+    <details>
+      <summary>Level 1 spells</summary>
+      <div class="sp"><b>Healing Word</b> <span class="t-ba tag">bonus</span> <span class="m">60 ft · upcast +1d4</span><br>Ally regains <b>1d4+5</b>. Stands up the unconscious. Your action that turn: cantrip only.</div>
+      <div class="sp"><b>Ice Knife</b> <span class="m">action · 60 ft · upcast +1d6</span><br>+9 → <b>1d10 piercing</b>; then burst (hit or miss): target + all within 5 ft, DC 17 Dex or <b>2d6 cold</b>. Hits allies too!</div>
+      <div class="sp"><b>Animal Friendship</b> <span class="m">action · 30 ft · 24 h</span><br>Beast (Int ≤ 3): DC 17 Wis or charmed for a day.</div>
+      <div class="sp"><b>Detect Magic</b> <span class="t-c tag">C</span> <span class="t-r tag">ritual</span> <span class="m">action · self · 10 min</span><br>Sense magic within 30 ft. Ritual-cast it — never pay a slot.</div>
+    </details>
+
+    <details>
+      <summary>Level 2 spells</summary>
+      <div class="sp"><b>Heat Metal (cold)</b> <span class="t-c tag">C</span> <span class="m">action · 60 ft · 1 min · upcast +1d8</span><br>Metal object freezes: <b>2d8 cold, no roll, no save</b>. Later rounds: <span class="t-ba tag">bonus</span> pulse 2d8. Held: DC 17 Con or dropped. Worn: disadvantage on attacks &amp; checks.</div>
+      <div class="sp"><b>Lesser Restoration</b> <span class="m">action · touch</span><br>Cure blinded / deafened / paralyzed / poisoned / one disease.</div>
+      <div class="sp"><b>Air Bubble</b> <span class="t-r tag">ritual</span> <span class="m">action · 60 ft · 24 h</span><br>Fresh air around one creature’s head (upcast: +2 creatures/level).</div>
+      <div class="sp"><b>Beast Sense</b> <span class="t-c tag">C</span> <span class="t-r tag">ritual</span> <span class="m">action · touch · 1 h</span><br>See/hear through a willing beast. Your own body is blind &amp; deaf meanwhile.</div>
+    </details>
+
+    <details>
+      <summary>Level 3 spells</summary>
+      <div class="sp"><b>Tidal Wave</b> <span class="m">action · 120 ft · 30×10 ft area</span><br>DC 17 Dex: <b>4d8 bludgeoning + prone</b> (save: half, stays standing). Douses fires. No concentration.</div>
+      <div class="sp"><b>Aura of Vitality</b> <span class="t-c tag">C</span> <span class="m">action · self, 30-ft aura · 1 min</span><br>Each round, <span class="t-ba tag">bonus</span>: someone in the aura heals <b>2d6</b>. Whole minute ≈ 70 HP. The post-fight refill.</div>
+    </details>
+
+    <details>
+      <summary>Beast statblocks</summary>
+      <div class="sp"><b>🦈 Sharkodile</b> <span class="m">AC 13 · 60 HP · 20 ft / swim 60 ft · blindsight 60 ft in water · Stealth +5, Perception +3</span><br>
+        <b>Blood Frenzy:</b> advantage on melee vs anyone missing HP · <b>Hard Scales:</b> −2 physical damage per hit, cold resist · <b>Multiattack:</b> Bite + Tail · <b>Bite +8:</b> 3d10+5, grapple esc DC 16 (restrained) · <b>Tail +8:</b> reach 10 ft, 2d8+5, DC 16 Str or prone.</div>
+      <div class="sp"><b>🐸 Giant Toad</b> <span class="m">AC 11 · 39 HP · 20 ft / swim 40 ft · darkvision 30 ft · glows</span><br>
+        <b>Resistance</b> to bludgeoning/piercing/slashing (DM buff) · <b>Standing Leap:</b> 20 ft long / 10 ft high · <b>Bite +4:</b> 1d10+2 + 1d10 poison, grapple esc DC 13 (restrained) · <b>Swallow:</b> bite a grappled Medium-or-smaller → inside: blinded, restrained, 3d6 acid per round.</div>
+      <div class="sp"><b>🦎 Giant Salamander</b> <span class="m">AC 13 · 33 HP · 45 ft / climb 15 / swim 20 / burrow 10 · darkvision 30 ft</span><br>
+        <b>Amphibious</b> · <b>Limb Regeneration</b> · <b>Bite +3:</b> 2d4+1 · <b>Ballistic Tongue +4:</b> reach 25 ft, 1d4+3, grapple esc DC 13 + pull target 25 ft to you.</div>
+      <div class="sp"><b>🐊 Crocodile</b> <span class="m">AC 12 · 19 HP · 20 ft / swim 30 ft · Stealth +2 (standard block — confirm with DM)</span><br>
+        <b>Hold Breath</b> 15 min · <b>Bite +4:</b> 1d10+2, grapple esc DC 13 (restrained).</div>
+    </details>
+
+    <details>
+      <summary>Abilities &amp; saves</summary>
+      <div class="abil">
+        <div><span>STR</span><b>17</b><i>+3 / +3</i></div>
+        <div><span>DEX</span><b>14</b><i>+2 / +2</i></div>
+        <div><span>CON</span><b>19</b><i>+4 / +4</i></div>
+        <div><span>INT</span><b>11</b><i>+0 / <b>+3</b></i></div>
+        <div><span>WIS</span><b>21</b><i>+5 / <b>+8</b></i></div>
+        <div><span>CHA</span><b>7</b><i>−2 / −2</i></div>
+      </div>
+      <p class="hint">check / save — bold saves are proficient. Concentration = Con save (+4) DC 10 or half damage taken. Passive Perception 15.</p>
+    </details>
+
+    <details>
+      <summary>Traits, feat &amp; equipment</summary>
+      <div class="sp"><b>Mountain Born</b> — resistance to cold damage (always, any form).</div>
+      <div class="sp"><b>Stone’s Endurance</b> — reaction when damaged: reduce it by 1d12+4. 3/long rest (pips above). Works in beast form.</div>
+      <div class="sp"><b>Charger (feat)</b> — when you Dash: bonus-action melee attack; if you moved 10+ ft straight at the target, +5 damage or shove 10 ft. Works in beast form.</div>
+      <div class="sp"><b>Crocodile teeth staff</b> — +6 to hit, 1d6+3 bludgeoning + 1d4 piercing (1d8+3 two-handed). Spell focus: +1 DC &amp; +1 spell attack (already in your 17 / +9).</div>
+      <div class="sp"><b>Moss tunic</b> — regain 2 HP at the start of each of your rounds (humanoid form; likely melds when shaped — DM).</div>
+      <div class="sp"><b>Moonstone necklace</b> — cast Light and Dancing Lights at will.</div>
+      <div class="sp"><b>Proficiencies</b> — light armor, shields (no metal), simple weapons. Druids wear no metal armor.</div>
+    </details>
+  </section>
+
+  <!-- NOTES -->
+  <section class="card">
+    <h2>Notes</h2>
+    <textarea id="notes" placeholder="Initiative order, enemy names, rulings, loot…"></textarea>
+  </section>
+
+  <button class="danger" id="btnResetAll">⟲ Reset everything (start a fresh session)</button>
+</main>
+
+<div id="notice"></div>
+
+<script>
+'use strict';
+const KEY = 'drogan-tracker-v1';
+const MAXHP = 57;
+const DEF = {hp:57, temp:0, form:null, formHp:0, ws:4, se:3, berries:10,
+             s1:4, s2:3, s3:3, conc:'', ds:0, df:0, notes:''};
+
+const FORMS = {
+  sharkodile: {n:'Sharkodile', e:'🦈', hp:60, ac:13,
+    stat:'AC 13 · 20 ft / swim 60 ft · blindsight 60 ft in water',
+    sub:'60 HP · damage + grapple tank',
+    rows:[
+      ['Blood Frenzy','advantage on melee attacks vs anyone missing HP.'],
+      ['Hard Scales','every physical hit deals 2 less · cold resistant.'],
+      ['Multiattack','one Bite + one Tail.'],
+      ['Bite +8','3d10+5 piercing · grappled, escape DC 16 (restrained).'],
+      ['Tail +8','reach 10 ft (not the grappled one) · 2d8+5 · DC 16 Str or prone.']
+    ]},
+  toad: {n:'Giant Toad', e:'🐸', hp:39, ac:11,
+    stat:'AC 11 · 20 ft / swim 40 ft · darkvision 30 ft · glows',
+    sub:'39 HP · resists weapon damage',
+    rows:[
+      ['Physical resistance','half damage from bludgeoning / piercing / slashing.'],
+      ['Standing Leap','jump 20 ft long / 10 ft high, no run-up.'],
+      ['Bite +4','1d10+2 piercing + 1d10 poison · grappled, escape DC 13 (restrained).'],
+      ['Swallow','bite a grappled Medium-or-smaller → swallowed: blinded, restrained, 3d6 acid at the start of each of your turns.']
+    ]},
+  salamander: {n:'Giant Salamander', e:'🦎', hp:33, ac:13,
+    stat:'AC 13 · 45 ft / climb 15 / swim 20 / burrow 10 · darkvision 30 ft',
+    sub:'33 HP · fast scout & grabber',
+    rows:[
+      ['Amphibious','breathes air and water · regrows lost limbs.'],
+      ['Bite +3','2d4+1 piercing.'],
+      ['Ballistic Tongue +4','reach 25 ft · 1d4+3 · grappled, escape DC 13 · pulls the target up to 25 ft to you.']
+    ]},
+  croc: {n:'Crocodile', e:'🐊', hp:19, ac:12,
+    stat:'AC 12 · 20 ft / swim 30 ft · Stealth +2 · hold breath 15 min',
+    sub:'19 HP · cheap stealth shape',
+    rows:[
+      ['Just a log','float, ambush, ferry a friend.'],
+      ['Bite +4','1d10+2 piercing · grappled, escape DC 13 (restrained).']
+    ]}
+};
+
+let S = load();
+
+function load(){
+  try{
+    const raw = localStorage.getItem(KEY);
+    if(raw) return Object.assign({}, DEF, JSON.parse(raw));
+  }catch(e){}
+  return Object.assign({}, DEF);
+}
+function save(){
+  try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){}
+}
+function persist(){ save(); render(); }
+
+const $ = id => document.getElementById(id);
+const F = () => FORMS[S.form];
+
+/* ---------- toast ---------- */
+let noticeTimer = null;
+function note(msg){
+  const el = $('notice');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(noticeTimer);
+  noticeTimer = setTimeout(()=>el.classList.remove('show'), 4500);
+}
+
+/* ---------- HP ---------- */
+function applyDelta(d){
+  if(d > 0){
+    if(S.form) S.formHp = Math.min(F().hp, S.formHp + d);
+    else       S.hp     = Math.min(MAXHP, S.hp + d);
+  }else{
+    let dmg = -d;
+    const t = Math.min(S.temp, dmg);
+    S.temp -= t; dmg -= t;
+    if(dmg > 0){
+      if(S.form){
+        S.formHp -= dmg;
+        if(S.formHp <= 0){
+          const over = -S.formHp, name = F().n;
+          S.formHp = 0; S.form = null;
+          if(over > 0) S.hp = Math.max(0, S.hp - over);
+          note(name + ' drops to 0 — you revert to Drogan' +
+               (over ? ' and ' + over + ' damage carries over.' : '.'));
+        }
+      }else{
+        S.hp = Math.max(0, S.hp - dmg);
+        if(S.hp === 0) note('Drogan is at 0 HP — death saves (under Hit Points).');
+      }
+    }
+  }
+  persist();
+}
+
+function setExact(){
+  const max = S.form ? F().hp : MAXHP;
+  const cur = S.form ? S.formHp : S.hp;
+  const v = prompt('Set current HP (0–' + max + '):', cur);
+  if(v === null) return;
+  const n = parseInt(v, 10);
+  if(isNaN(n)) return;
+  const c = Math.max(0, Math.min(max, n));
+  if(S.form) S.formHp = c; else S.hp = c;
+  persist();
+}
+
+/* ---------- wild shape ---------- */
+function transform(k){
+  if(S.form === k) return;
+  if(S.form && !confirm('Abandon ' + F().n + ' (remaining form HP is lost) and spend another charge for ' + FORMS[k].n + '?')) return;
+  if(S.ws <= 0){
+    if(!confirm('No Wild Shape charges left. Transform anyway?')) return;
+  }else{
+    S.ws--;
+  }
+  S.form = k;
+  S.formHp = FORMS[k].hp;
+  note('Wild Shape → ' + FORMS[k].n + ' (action). Gear melds; no casting or talking.');
+  persist();
+}
+function revert(){
+  if(!S.form) return;
+  S.form = null;
+  note('Reverted (bonus action). Back on Drogan’s own HP.');
+  persist();
+}
+
+/* ---------- pips ---------- */
+function renderPips(el, count, max, onSet, cls){
+  el.innerHTML = '';
+  for(let i = 0; i < max; i++){
+    const b = document.createElement('button');
+    b.className = 'pip' + (cls ? ' ' + cls : '') + (i < count ? ' on' : '');
+    b.setAttribute('aria-label', (i < count ? 'spend' : 'restore'));
+    b.onclick = () => { onSet(i < count ? i : i + 1); persist(); };
+    el.appendChild(b);
+  }
+}
+
+/* ---------- rests / reset ---------- */
+function longRest(){
+  if(!confirm('Long rest? Restores HP, spell slots, Wild Shape and Stone’s Endurance.')) return;
+  S.hp = MAXHP; S.temp = 0; S.form = null; S.formHp = 0;
+  S.ws = DEF.ws; S.se = DEF.se; S.s1 = DEF.s1; S.s2 = DEF.s2; S.s3 = DEF.s3;
+  S.conc = ''; S.ds = 0; S.df = 0;
+  note('Long rest complete. (Goodberries don’t restock.)');
+  persist();
+}
+function resetAll(){
+  if(!confirm('Reset EVERYTHING to a fresh session (including goodberries and notes)?')) return;
+  S = Object.assign({}, DEF);
+  note('Fresh session. Good luck!');
+  persist();
+}
+
+/* ---------- render ---------- */
+function render(){
+  const shaped = !!S.form;
+  const max = shaped ? F().hp : MAXHP;
+  const cur = shaped ? S.formHp : S.hp;
+
+  $('mini').innerHTML = (shaped ? F().e : '❤️') + ' <b>' + cur + '</b>/' + max +
+                        ' · AC ' + (shaped ? F().ac : 14);
+
+  $('hpTitle').textContent = shaped ? F().e + ' ' + F().n + ' HP' : 'Hit Points';
+  $('bigHp').innerHTML = (shaped ? '<span class="emo">' + F().e + '</span> ' : '') +
+                         cur + '<small>/' + max + '</small>';
+  $('bigHp').classList.toggle('zero', !shaped && S.hp === 0);
+  $('hpSub').textContent = shaped
+    ? 'Drogan underneath: ' + S.hp + '/' + MAXHP + ' — overflow damage lands there'
+    : 'Moss tunic: +2 HP at the start of your turns';
+  $('tempVal').textContent = S.temp;
+  $('btnTunic').style.display = shaped ? 'none' : '';
+  if(!shaped && S.hp === 0) $('deathBox').open = true;
+
+  renderPips($('pipsDS'), S.ds, 3, v => S.ds = v);
+  renderPips($('pipsDF'), S.df, 3, v => S.df = v, 'red');
+  renderPips($('pipsWS'), S.ws, DEF.ws, v => S.ws = v);
+  renderPips($('pipsSE'), S.se, DEF.se, v => S.se = v);
+  renderPips($('pipsS1'), S.s1, DEF.s1, v => S.s1 = v);
+  renderPips($('pipsS2'), S.s2, DEF.s2, v => S.s2 = v);
+  renderPips($('pipsS3'), S.s3, DEF.s3, v => S.s3 = v);
+
+  document.querySelectorAll('.formbtn').forEach(b =>
+    b.classList.toggle('active', b.dataset.f === S.form));
+
+  const fc = $('formCard');
+  if(shaped){
+    fc.hidden = false;
+    fc.innerHTML = '<h3>' + F().e + ' ' + F().n + '</h3>' +
+      '<div class="statline">' + F().stat + '</div>' +
+      '<ul>' + F().rows.map(r => '<li><b>' + r[0] + '</b> — ' + r[1] + '</li>').join('') + '</ul>' +
+      '<button class="revert" id="btnRevert">↩ Revert to Drogan (bonus action)</button>';
+    $('btnRevert').onclick = revert;
+  }else{
+    fc.hidden = true;
+    fc.innerHTML = '';
+  }
+
+  $('berryVal').textContent = S.berries;
+
+  if($('concSel').value !== S.conc) $('concSel').value = S.conc;
+  const cb = $('concBanner');
+  if(S.conc){
+    cb.hidden = false;
+    cb.innerHTML = '⚠ Concentrating: <b>' + S.conc + '</b> — when you take damage: Con save (+4), ' +
+                   'DC 10 or half the damage, whichever is higher. Casting another C-spell ends this one. ' +
+                   'Survives Wild Shape.';
+  }else{
+    cb.hidden = true;
+  }
+
+  const notesEl = $('notes');
+  if(document.activeElement !== notesEl && notesEl.value !== S.notes) notesEl.value = S.notes;
+}
+
+/* ---------- wire up ---------- */
+document.querySelectorAll('.adj').forEach(b =>
+  b.addEventListener('click', () => applyDelta(parseInt(b.dataset.d, 10))));
+$('bigHp').addEventListener('click', setExact);
+$('tempPlus').addEventListener('click', () => { S.temp = Math.min(99, S.temp + 1); persist(); });
+$('tempMinus').addEventListener('click', () => { S.temp = Math.max(0, S.temp - 1); persist(); });
+$('btnTunic').addEventListener('click', () => applyDelta(2));
+$('btnDeathReset').addEventListener('click', () => { S.ds = 0; S.df = 0; persist(); });
+$('berryPlus').addEventListener('click', () => { S.berries = Math.min(10, S.berries + 1); persist(); });
+$('berryMinus').addEventListener('click', () => {
+  if(S.berries <= 0) return;
+  S.berries--;
+  note('Goodberry: +1 HP to whoever ate it, and they’re fed for the day.');
+  persist();
+});
+$('concSel').addEventListener('change', e => { S.conc = e.target.value; persist(); });
+$('notes').addEventListener('input', e => { S.notes = e.target.value; save(); });
+$('btnLongRest').addEventListener('click', longRest);
+$('btnResetAll').addEventListener('click', resetAll);
+
+const fb = $('formBtns');
+Object.keys(FORMS).forEach(k => {
+  const f = FORMS[k];
+  const b = document.createElement('button');
+  b.className = 'formbtn';
+  b.dataset.f = k;
+  b.innerHTML = '<b>' + f.e + ' ' + f.n + '</b><span>' + f.sub + '</span>';
+  b.addEventListener('click', () => transform(k));
+  fb.appendChild(b);
+});
+
+render();
+</script>
+</body>
+</html>
